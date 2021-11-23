@@ -2,7 +2,7 @@
 
 import sys
 
-from lib import Session, Entry
+from lib import Session, SessionGitHub, SessionGitLab, Entry
 
 def parseArgs():
 
@@ -13,7 +13,13 @@ def parseArgs():
 
 def main():
 
-   session = Session()
+   try:
+      if Session.isGitHubRepo():
+         session = SessionGitHub()
+      else:
+         session = SessionGitLab()
+   except ValueError:
+      sys.exit(1)
 
    if len(sys.argv) < 2: # print open issues
       for entry in session.iterOpen():

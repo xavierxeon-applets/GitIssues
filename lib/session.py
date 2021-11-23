@@ -1,96 +1,56 @@
 #!/usr/bin/env python3
 
-import sys, os, requests, json
+import sys, os
 from pathlib import Path
 
 from xxpystuff.tools import Process, Console
-
-from .entry import Entry
 
 class Session():
 
    def __init__(self):
 
-      repoUrl, repoOwner, self.repoName = self._readGitCOnfig()
-      if not repoUrl or not repoOwner or not self.repoName:
+      self._repoUrl, self._repoOwner, self._repoName = self._readGitCOnfig()
+      if not self._repoUrl or not self._repoOwner or not self._repoName:
          sys.exit(1)
       
-      self.isGitHub = 'github.com' == repoUrl
-
-      userName, self.password = self._readGitCredentials(repoUrl)
-      if not userName or not self.password:
+      self._userName, self._password = self._readGitCredentials()
+      if not self._userName or not self._password:
          sys.exit(1)
 
-      #print(repoUrl, repoOwner, repoName, userName, password)
-
-      self.session = requests.Session()
-
-      if self.isGitHub:
-         self.session.auth = (userName, self.password)
-         self.url = f'https://api.github.com/repos/{repoOwner}/{self.repoName}/issues'
-      else:
-         print(Console.red('TODO: gitlab oauth2 authentication'))
-         # maybe https://github.com/requests/requests-oauthlib
-         sys.exit(1)
-         self.session.auth = (userName, self.password)
-         self.url = f'https://{repoUrl}/repos/api/v4/issues'
-
-   def iterOpen(self):
-
-      if self.isGitHub:
-         request = self.session.get(self.url)
-      else:
-         headers = {'PRIVATE-TOKEN': self.password}
-         request = self.session.get(self.url, headers = headers)
-         print(self.url, headers)
-
-      if request.status_code != 200:
-         print(Console.magenta(str(request.status_code)))
-         return None
-
-      data = json.loads(request.content)
-      if self.isGitHub:
-         for content in data:
-            
-            if content['state'] != 'open':
-               continue
-
-            entry = Entry(content['title'], content['body'], content['number'])
-            yield entry
-      else:
-         print(data)
-      return None
-
-   def create(self, entry):
-
-      content = {
-         'title': entry.title
-         , 'body': entry.body if entry.body else str()
-      }
-
-      request = self.session.post(self.url, json.dumps(content))
-      if request.status_code != 201:
-         print(Console.magenta(str(request.status_code)))
-         return None
-
-      data = json.loads(request.content)                
-      entry.number = data['number']
-
-   def _readGitCOnfig(self):
+   @staticmethod
+   def isGitHubRepo():
 
       giturl = Process.execute(['git', 'config', '--get', 'remote.origin.url'])
       if not giturl:
          print(Console.red('not a git repository'))
-         return (None, None)
+         raise ValueError
 
-      giturl = giturl.decode().strip()
-      giturl = giturl.replace('https://', '')
-      giturl = giturl.replace('.git', '')
+      giturl = giturl.decode().strip()      
+      return 'github.com' in giturl
 
-      urlParts = giturl.split('/')
+   def iterOpen(self):
+
+      raise NotImplementedError
+
+   def create(self, entry):
+
+      raise NotImplementedError
+
+   def _readGitCOnfig(self):
+
+      self._giturl = Process.execute(['git', 'config', '--get', 'remote.origin.url'])
+      if not self._giturl:
+         return (None, None, None)
+
+      self._giturl = self._giturl.decode().strip()
+
+      tmp_giturl = self._giturl.replace('https://', '')
+      tmp_giturl = tmp_giturl.replace('.git', '')
+
+      urlParts = tmp_giturl.split('/')
       return urlParts
 
-   def _readGitCredentials(self, repoUrl):
+   def _readGitCredentials(self):
 
       gitCredentialsFileName = str(Path.home()) + '/.git-credentials'
       if not os.path.exists(gitCredentialsFileName):
@@ -103,11 +63,11 @@ class Session():
       with open(gitCredentialsFileName) as infile:
          for line in infile:
             line = line.strip()
-            if not line.endswith('@' + repoUrl):
+            if not line.endswith('@' + self._repoUrl):
                continue
 
             line = line.replace('https://', '')
-            line = line.replace('@' + repoUrl, '')
+            line = line.replace('@' + self._repoUrl, '')
 
             lineParts = line.split(':')
             return lineParts
