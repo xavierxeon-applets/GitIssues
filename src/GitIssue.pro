@@ -7,6 +7,7 @@ QT += network
 CONFIG += c++17
 
 DESTDIR = $$PWD/../bin
+macos:CONFIG -= app_bundle
 
 HEADERS += \
    Exception.h \
