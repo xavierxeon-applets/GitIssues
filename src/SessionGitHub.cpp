@@ -3,7 +3,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
-Session::GitHub::GitHub(const QString& gitUrl)
+Session::GitHub::GitHub(const QUrl& gitUrl)
    : Abstract(gitUrl)
 {
 }

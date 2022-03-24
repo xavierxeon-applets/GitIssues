@@ -2,6 +2,7 @@
 #define CredentialsH
 
 #include <QString>
+#include <QUrl>
 
 class Credentials
 {
@@ -9,27 +10,18 @@ public:
    Credentials();
 
 public:
-   void read(const QString& baseUrl);
+   void read(const QUrl& gitUrl);
 
 public:
    QString userName;
    QString token;
 
 private:
-   enum class Source
-   {
-      GitCredentials,
-      IssueSettings
-   };
+   void readGit(const QUrl& gitUrl);
+   void readFile(const QUrl& gitUrl);
 
 private:
-   void readGit(const QString& baseUrl);
-   void readFile(const QString& baseUrl);
-   Source determineSource();
-   void saveSource();
-
-private:
-   Source source;
+   bool useGitCredentials;
 };
 
 #endif // CredentialsH

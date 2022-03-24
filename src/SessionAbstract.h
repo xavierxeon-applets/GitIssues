@@ -24,7 +24,7 @@ namespace Session
       virtual void createNewIssue(const QString& title) = 0;
 
    protected:
-      Abstract(const QString& gitUrl);
+      Abstract(const QUrl& gitUrl);
 
    protected:
       virtual Issue::List openIssues() = 0;
@@ -33,15 +33,11 @@ namespace Session
       virtual void authorize(QNetworkRequest& request) const = 0;
 
    protected:
-      const QString gitUrl;
-      QString baseUrl;
+      const QUrl gitUrl;
+      QString host;
       QString owner;
       QString repoName;
       Credentials credentials;
-
-   private:
-      void parseGitUrl();
-      //void readGitCredentials();
 
    private:
       QNetworkAccessManager* client;

@@ -11,17 +11,23 @@
 #include "SessionGitHub.h"
 #include "SessionGitLab.h"
 
-Session::Abstract::Abstract(const QString& gitUrl)
+Session::Abstract::Abstract(const QUrl& gitUrl)
    : QObject(nullptr)
    , gitUrl(gitUrl)
-   , baseUrl()
+   , host()
    , owner()
    , repoName()
    , credentials()
    , client(nullptr)
 {
-   parseGitUrl();
-   credentials.read(baseUrl);
+   host = gitUrl.host();
+
+   const QStringList components = gitUrl.path().split("/");
+   owner = components.at(1);
+   repoName = components.mid(2).join("/");
+   repoName.replace(".git", "");
+
+   credentials.read(gitUrl);
 
    client = new QNetworkAccessManager(this);
 }
@@ -38,8 +44,8 @@ Session::Abstract* Session::Abstract::create()
 
    process.waitForFinished();
 
-   const QString gitUrl = process.readAllStandardOutput().simplified();
-   if (gitUrl.contains("github.com"))
+   const QUrl gitUrl(process.readAllStandardOutput().simplified());
+   if (gitUrl.host().contains("github.com"))
       return new GitHub(gitUrl);
    else
       return new GitLab(gitUrl);
@@ -116,24 +122,4 @@ QJsonObject Session::Abstract::postEndpoint(const QUrl& endPointUrl, const QByte
 
    const QJsonObject object = doc.object();
    return object;
-}
-
-void Session::Abstract::parseGitUrl()
-{
-   QString content = gitUrl;
-   content.replace("https://", "");
-   content.replace(".git", "");
-
-   QStringList components = content.split("/", Qt::SkipEmptyParts);
-   if (components.count() < 3)
-      throw Exception(Exception::Cause::MalformedUrl);
-
-   baseUrl = components.at(0);
-   if (baseUrl.contains("@"))
-   {
-      int index = baseUrl.indexOf("@") + 1;
-      baseUrl = baseUrl.mid(index);
-   }
-   owner = components.at(1);
-   repoName = components.mid(2).join("/");
 }

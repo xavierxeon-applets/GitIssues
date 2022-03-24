@@ -9,7 +9,7 @@ namespace Session
    {
       Q_OBJECT
    public:
-      GitLab(const QString& gitUrl);
+      GitLab(const QUrl& gitUrl);
 
    private:
       Issue::List openIssues() override;

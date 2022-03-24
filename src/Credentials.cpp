@@ -2,76 +2,45 @@
 
 #include <iostream>
 
-#include <QFile>
-#include <QStandardPaths>
+#include <QProcess>
 
 #include "Encryption.h"
 #include "Exception.h"
 #include "Settings.h"
 
 Credentials::Credentials()
-   : source(Source::OwnFile)
-   , credentialsFileName()
+   : useGitCredentials(false)
 {
-   const QString sourceName = Settings::text("Source");
+   //git config --global --get credential.helper
+   QProcess process;
+   process.start("git", {"config", "--global", "--get", "credential.helper"});
+   process.waitForFinished();
 
-   if (sourceName.isEmpty())
-   {
-      source = determineSource();
-      saveSource();
-   }
-   else if ("Keychain" == sourceName)
-      source = Source::Keychain;
-   else if ("GitCredentialsFile" == sourceName)
-      source = Source::GitCredentialsFile;
+   const QString helper = process.readAllStandardOutput();
+   if (!helper.isEmpty())
+      useGitCredentials = true;
 }
 
-void Credentials::read(const QString& baseUrl)
+void Credentials::read(const QUrl& gitUrl)
 {
-   if (Source::Keychain == source)
-      readKeychain(baseUrl);
-   else if (Source::GitCredentialsFile == source)
-      readGitFile(baseUrl);
+   if (useGitCredentials)
+      readGit(gitUrl);
    else
-      readOwnFile(baseUrl);
+      readFile(gitUrl);
 }
 
-void Credentials::readKeychain(const QString& baseUrl)
+void Credentials::readGit(const QUrl& gitUrl)
 {
 }
 
-void Credentials::readGitFile(const QString& baseUrl)
+void Credentials::readFile(const QUrl& gitUrl)
 {
-   QFile file(credentialsFileName);
-   if (!file.open(QIODevice::ReadOnly))
-      throw Exception(Exception::Cause::NoCredentialsFile);
+   const QString host = gitUrl.host();
+   QJsonObject object = Settings::object(host);
 
-   while (!file.atEnd())
-   {
-      QString line = QString::fromUtf8(file.readLine()).simplified();
-      if (!line.endsWith("@" + baseUrl))
-         continue;
-
-      line.replace("https://", "");
-      line.replace("@" + baseUrl, "");
-
-      QStringList components = line.split(":", Qt::SkipEmptyParts);
-      if (components.count() < 2)
-         throw Exception(Exception::Cause::MalformedCredentials);
-
-      userName = components.at(0);
-      token = components.at(1);
-   }
-
-   file.close();
-}
-
-void Credentials::readOwnFile(const QString& baseUrl)
-{
-   QJsonObject object = Settings::object(baseUrl);
    if (!object.contains("UserName"))
    {
-      std::cout << "provide USER NAME for " << baseUrl.toStdString() << ": ";
+      std::cout << "provide USER NAME for " << host.toStdString() << ": ";
       std::string inputUserName;
       std::cin >> inputUserName;
 
@@ -80,7 +49,7 @@ void Credentials::readOwnFile(const QString& baseUrl)
 
    if (!object.contains("Token"))
    {
-      std::cout << "provide TOKEN for " << baseUrl.toStdString() << ": ";
+      std::cout << "provide TOKEN for " << host.toStdString() << ": ";
       std::string inputToken;
       std::cin >> inputToken;
 
@@ -96,35 +65,5 @@ void Credentials::readOwnFile(const QString& baseUrl)
    //token = Encryption::decrypt(tokenData);
    token = tokenData;
 
-   Settings::write(baseUrl, object);
-}
-
-Credentials::Source Credentials::determineSource()
-{
-   // test keychain
-
-   // test git credentials
-   const QString homePath = QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
-
-   credentialsFileName = homePath + "/.git-credentials-wsl";
-   if (QFile::exists(credentialsFileName))
-      return Source::GitCredentialsFile;
-
-   credentialsFileName = homePath + "/.git-credentials";
-   QFile file(credentialsFileName);
-   if (file.open(QIODevice::ReadOnly))
-      return Source::GitCredentialsFile;
-
-   // use own solution
-   return Source::OwnFile;
-}
-
-void Credentials::saveSource()
-{
-   if (Source::Keychain == source)
-      Settings::write("Source", "Keychain");
-   if (Source::GitCredentialsFile == source)
-      Settings::write("Source", "GitCredentialsFile");
-   else
-      Settings::write("Source", "OwnFile");
+   Settings::write(host, object);
 }

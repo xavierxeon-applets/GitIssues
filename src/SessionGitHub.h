@@ -9,7 +9,7 @@ namespace Session
    {
       Q_OBJECT
    public:
-      GitHub(const QString& gitUrl);
+      GitHub(const QUrl& gitUrl);
 
    private:
       Issue::List openIssues() override;

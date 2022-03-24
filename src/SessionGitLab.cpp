@@ -3,17 +3,17 @@
 #include <QJsonObject>
 #include <QUrlQuery>
 
-Session::GitLab::GitLab(const QString& gitUrl)
+Session::GitLab::GitLab(const QUrl& gitUrl)
    : Abstract(gitUrl)
    , projectId()
 {
-   QUrl endPointUrl("https://" + baseUrl + "/api/v4/projects");
+   QUrl endPointUrl("https://" + host + "/api/v4/projects");
 
    for (const QJsonValue& value : getEndpoint(endPointUrl))
    {
       const QJsonObject projectObject = value.toObject();
       const QString projectUrl = projectObject["http_url_to_repo"].toString();
-      if (projectUrl != gitUrl)
+      if (projectUrl != gitUrl.toString())
          continue;
 
       const int iValue = projectObject["id"].toInt();
@@ -29,7 +29,7 @@ Issue::List Session::GitLab::openIssues()
    QUrlQuery query;
    query.addQueryItem("state", "opened");
 
-   QUrl endPointUrl("https://" + baseUrl + "/api/v4/projects/" + projectId + "/issues");
+   QUrl endPointUrl("https://" + host + "/api/v4/projects/" + projectId + "/issues");
    endPointUrl.setQuery(query);
 
    for (const QJsonValue& value : getEndpoint(endPointUrl))
@@ -53,7 +53,7 @@ void Session::GitLab::createNewIssue(const QString& title)
    QUrlQuery query;
    query.addQueryItem("title", title);
 
-   QUrl endPointUrl("https://" + baseUrl + "/api/v4/projects/" + projectId + "/issues");
+   QUrl endPointUrl("https://" + host + "/api/v4/projects/" + projectId + "/issues");
    endPointUrl.setQuery(query);
 
    const QJsonObject reply = postEndpoint(endPointUrl);
