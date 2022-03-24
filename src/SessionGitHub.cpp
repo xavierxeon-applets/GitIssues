@@ -44,6 +44,6 @@ void Session::GitHub::createNewIssue(const QString& title)
 
 void Session::GitHub::authorize(QNetworkRequest& request) const
 {
-   const QByteArray content = QByteArray("Basic ") + (userName + ":" + token).toUtf8().toBase64();
+   const QByteArray content = QByteArray("Basic ") + (credentials.userName + ":" + credentials.token).toUtf8().toBase64();
    request.setRawHeader(QByteArrayLiteral("Authorization"), content);
 }

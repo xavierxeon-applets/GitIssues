@@ -9,6 +9,7 @@
 #include <QNetworkAccessManager>
 #include <QStringList>
 
+#include "Credentials.h"
 #include "Exception.h"
 #include "GitIssue.h"
 
@@ -36,12 +37,11 @@ namespace Session
       QString baseUrl;
       QString owner;
       QString repoName;
-      QString userName;
-      QString token;
+      Credentials credentials;
 
    private:
       void parseGitUrl();
-      void readGitCredentials();
+      //void readGitCredentials();
 
    private:
       QNetworkAccessManager* client;

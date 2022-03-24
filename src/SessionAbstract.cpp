@@ -7,7 +7,6 @@
 #include <QJsonParseError>
 #include <QNetworkReply>
 #include <QProcess>
-#include <QStandardPaths>
 
 #include "SessionGitHub.h"
 #include "SessionGitLab.h"
@@ -18,12 +17,11 @@ Session::Abstract::Abstract(const QString& gitUrl)
    , baseUrl()
    , owner()
    , repoName()
-   , userName()
-   , token()
+   , credentials()
    , client(nullptr)
 {
    parseGitUrl();
-   readGitCredentials();
+   credentials.read(baseUrl);
 
    client = new QNetworkAccessManager(this);
 }
@@ -138,36 +136,4 @@ void Session::Abstract::parseGitUrl()
    }
    owner = components.at(1);
    repoName = components.mid(2).join("/");
-}
-
-void Session::Abstract::readGitCredentials()
-{
-   const QString homePath = QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
-
-   QString fileName = homePath + "/.git-credentials-wsl";
-   if (!QFile::exists(fileName))
-      fileName = homePath + "/.git-credentials";
-
-   QFile file(fileName);
-   if (!file.open(QIODevice::ReadOnly))
-      throw Exception(Exception::Cause::NoCredenialsFile);
-
-   while (!file.atEnd())
-   {
-      QString line = QString::fromUtf8(file.readLine()).simplified();
-      if (!line.endsWith("@" + baseUrl))
-         continue;
-
-      line.replace("https://", "");
-      line.replace("@" + baseUrl, "");
-
-      QStringList components = line.split(":", Qt::SkipEmptyParts);
-      if (components.count() < 2)
-         throw Exception(Exception::Cause::MalformedCredentials);
-
-      userName = components.at(0);
-      token = components.at(1);
-   }
-
-   file.close();
 }

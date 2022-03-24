@@ -61,5 +61,5 @@ void Session::GitLab::createNewIssue(const QString& title)
 
 void Session::GitLab::authorize(QNetworkRequest& request) const
 {
-   request.setRawHeader(QByteArrayLiteral("PRIVATE-TOKEN"), token.toUtf8());
+   request.setRawHeader(QByteArrayLiteral("PRIVATE-TOKEN"), credentials.token.toUtf8());
 }

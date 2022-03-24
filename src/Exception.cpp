@@ -12,8 +12,8 @@ QString Exception::causeString() const
       return "NoGit";
    else if (Cause::MalformedUrl == cause)
       return "MalformedUrl";
-   else if (Cause::NoCredenialsFile == cause)
-      return "NoCredenialsFile";
+   else if (Cause::NoCredentialsFile == cause)
+      return "NoCredentialsFile";
    else if (Cause::MalformedCredentials == cause)
       return "MalformedCredentials";
    else if (Cause::ServerError == cause)

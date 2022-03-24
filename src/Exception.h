@@ -10,7 +10,7 @@ public:
    {
       NoGit,
       MalformedUrl,
-      NoCredenialsFile,
+      NoCredentialsFile,
       MalformedCredentials,
       ServerError,
       MalformedReply
