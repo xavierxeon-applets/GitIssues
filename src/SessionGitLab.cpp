@@ -1,5 +1,6 @@
 #include "SessionGitLab.h"
 
+#include <QJsonArray>
 #include <QJsonObject>
 #include <QUrlQuery>
 
@@ -22,7 +23,7 @@ Session::GitLab::GitLab(const QUrl& gitUrl)
    }
 }
 
-Issue::List Session::GitLab::openIssues()
+Session::Issue::List Session::GitLab::openIssues()
 {
    Issue::List issueList;
 
@@ -61,5 +62,5 @@ void Session::GitLab::createNewIssue(const QString& title)
 
 void Session::GitLab::authorize(QNetworkRequest& request) const
 {
-   request.setRawHeader(QByteArrayLiteral("PRIVATE-TOKEN"), credentials.token.toUtf8());
+   request.setRawHeader(QByteArrayLiteral("PRIVATE-TOKEN"), token.toUtf8());
 }

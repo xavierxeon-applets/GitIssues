@@ -3,7 +3,9 @@
 #include <QAuthenticator>
 #include <QCoreApplication>
 #include <QFile>
+#include <QJsonArray>
 #include <QJsonDocument>
+#include <QJsonObject>
 #include <QJsonParseError>
 #include <QNetworkReply>
 #include <QProcess>
@@ -11,14 +13,22 @@
 #include "SessionGitHub.h"
 #include "SessionGitLab.h"
 
-// issue
+// exception
 
-bool Issue::operator<(const Issue& other) const
+Session::Exception::Exception(const Cause& cause)
+   : QException()
+   , cause(cause)
+{
+}
+
+// Issue
+
+bool Session::Issue::operator<(const Issue& other) const
 {
    return (number < other.number);
 }
 
-// session abract
+// session
 
 Session::Abstract* Session::Abstract::createSession()
 {
@@ -52,21 +62,6 @@ Session::Abstract* Session::Abstract::createSession()
       return new GitLab(gitUrl);
 }
 
-void Session::Abstract::printOpenIssues()
-{
-   const Issue::List openIssueList = openIssues();
-   if (openIssueList.isEmpty())
-   {
-      qInfo() << "no open issues";
-   }
-   else
-   {
-      qInfo() << "open issues:";
-      for (const Issue& issue : openIssueList)
-         qInfo() << issue.number << ": " << qPrintable(issue.title);
-   }
-}
-
 Session::Abstract::Abstract(const QUrl& gitUrl)
    : QObject(nullptr)
    , gitUrl(gitUrl)
@@ -77,6 +72,8 @@ Session::Abstract::Abstract(const QUrl& gitUrl)
    , token()
    , client(nullptr)
 {
+   client = new QNetworkAccessManager(this);
+
    host = gitUrl.host();
 
    const QStringList components = gitUrl.path().split("/");
@@ -84,25 +81,37 @@ Session::Abstract::Abstract(const QUrl& gitUrl)
    repoName = components.mid(2).join("/");
    repoName.replace(".git", "");
 
-   credentials.read(gitUrl);
+   const QString protocoll = QString("protocol=%1\n").arg(gitUrl.scheme());
+   const QString host = QString("host=%1\n").arg(gitUrl.host());
+   const QString path = QString("path=%1\n").arg(gitUrl.path().mid(1));
+   const QString repoUser = QString("username=%1\n").arg(gitUrl.userName());
 
-   client = new QNetworkAccessManager(this);
-}
+   QProcess processGetCredentials;
+   processGetCredentials.start("git", {"credential", "fill"});
+   processGetCredentials.waitForStarted();
 
-bool Session::Abstract::testGitRepository()
-{
-   QProcess process;
-   process.start("git", {"config", "--get", "remote.origin.url"});
-   if (!process.waitForStarted())
+   processGetCredentials.write(protocoll.toUtf8());
+   processGetCredentials.write(host.toUtf8());
+   processGetCredentials.write(path.toUtf8());
+   if (!gitUrl.userName().isEmpty())
+      processGetCredentials.write(repoUser.toUtf8());
+
+   processGetCredentials.write("\n");
+   processGetCredentials.waitForFinished();
+
+   const QString reply = QString::fromUtf8(processGetCredentials.readAllStandardOutput());
+   for (const QString& line : reply.split("\n", Qt::SkipEmptyParts))
    {
-      //qWarning() << process.readAllStandardError().simplified();
-      throw Exception(Exception::Cause::NoGit);
+      int index = line.indexOf("=");
+      if (index < 0)
+         continue;
+      const QString key = line.mid(0, index);
+      const QString value = line.mid(index + 1);
+      if ("username" == key)
+         userName = value;
+      if ("password" == key)
+         token = value;
    }
-   process.waitForFinished();
-}
-
-bool Session::Abstract::testCredentialHelper()
-{
 }
 
 QJsonArray Session::Abstract::getEndpoint(const QUrl& endPointUrl)
