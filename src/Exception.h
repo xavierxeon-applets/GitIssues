@@ -9,10 +9,10 @@ public:
    enum class Cause
    {
       NoGit,
-      MalformedUrl,
-      NoCredentialsFile,
-      MalformedCredentials,
+      NoRemote,
+      NoCredentialHelper,
       ServerError,
+      MalformedUrl,
       MalformedReply
    };
 

@@ -11,13 +11,70 @@
 #include "SessionGitHub.h"
 #include "SessionGitLab.h"
 
+// issue
+
+bool Issue::operator<(const Issue& other) const
+{
+   return (number < other.number);
+}
+
+// session abract
+
+Session::Abstract* Session::Abstract::createSession()
+{
+   // get remote url
+   QProcess processUrl;
+   processUrl.start("git", {"config", "--get", "remote.origin.url"});
+   if (!processUrl.waitForStarted())
+   {
+      //qWarning() << process.readAllStandardError().simplified();
+      throw Exception(Exception::Cause::NoGit);
+   }
+   processUrl.waitForFinished();
+   const QUrl gitUrl(processUrl.readAllStandardOutput().simplified());
+
+   // no url means no issue server
+   if (gitUrl.isEmpty())
+      throw Exception(Exception::Cause::NoRemote);
+
+   // test if credential helper available
+   QProcess processCredentialHelper;
+   processCredentialHelper.start("git", {"config", "--global", "--get", "credential.helper"});
+   processCredentialHelper.waitForFinished();
+
+   const QString helper = processCredentialHelper.readAllStandardOutput();
+   if (helper.isEmpty())
+      throw Exception(Exception::Cause::NoCredentialHelper);
+
+   if (gitUrl.host().contains("github.com"))
+      return new GitHub(gitUrl);
+   else
+      return new GitLab(gitUrl);
+}
+
+void Session::Abstract::printOpenIssues()
+{
+   const Issue::List openIssueList = openIssues();
+   if (openIssueList.isEmpty())
+   {
+      qInfo() << "no open issues";
+   }
+   else
+   {
+      qInfo() << "open issues:";
+      for (const Issue& issue : openIssueList)
+         qInfo() << issue.number << ": " << qPrintable(issue.title);
+   }
+}
+
 Session::Abstract::Abstract(const QUrl& gitUrl)
    : QObject(nullptr)
    , gitUrl(gitUrl)
    , host()
    , owner()
    , repoName()
-   , credentials()
+   , userName()
+   , token()
    , client(nullptr)
 {
    host = gitUrl.host();
@@ -32,38 +89,20 @@ Session::Abstract::Abstract(const QUrl& gitUrl)
    client = new QNetworkAccessManager(this);
 }
 
-Session::Abstract* Session::Abstract::create()
+bool Session::Abstract::testGitRepository()
 {
    QProcess process;
    process.start("git", {"config", "--get", "remote.origin.url"});
    if (!process.waitForStarted())
    {
-      qWarning() << process.readAllStandardError().simplified();
+      //qWarning() << process.readAllStandardError().simplified();
       throw Exception(Exception::Cause::NoGit);
    }
-
    process.waitForFinished();
-
-   const QUrl gitUrl(process.readAllStandardOutput().simplified());
-   if (gitUrl.host().contains("github.com"))
-      return new GitHub(gitUrl);
-   else
-      return new GitLab(gitUrl);
 }
 
-void Session::Abstract::printOpenIssues()
+bool Session::Abstract::testCredentialHelper()
 {
-   const Issue::List openIssueList = openIssues();
-   if (openIssueList.isEmpty())
-   {
-      qDebug() << "no open issues";
-   }
-   else
-   {
-      qDebug("open issues:");
-      for (const Issue& issue : openIssueList)
-         qDebug() << issue.number << ": " << qPrintable(issue.title);
-   }
 }
 
 QJsonArray Session::Abstract::getEndpoint(const QUrl& endPointUrl)

@@ -11,9 +11,8 @@ macos:CONFIG -= app_bundle
 
 HEADERS += \
    Credentials.h \
-   Encryption.h \
    Exception.h \
-   GitIssue.h \
+   Issue.h \
    SessionAbstract.h \
    SessionGitHub.h \
    SessionGitLab.h \
@@ -21,10 +20,10 @@ HEADERS += \
 
 SOURCES += \
    Credentials.cpp \
-   Encryption.cpp \
    Exception.cpp \
-   GitIssue.cpp \
+   Issue.cpp \
    SessionAbstract.cpp \
    SessionGitHub.cpp \
    SessionGitLab.cpp \
-   Settings.cpp
+   Settings.cpp \
+   main.cpp

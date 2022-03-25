@@ -1,14 +1,6 @@
-#include "GitIssue.h"
-
-#include "SessionGitHub.h"
-#include "SessionGitLab.h"
+#include "SessionAbstract.h"
 
 #include <QCoreApplication>
-
-bool Issue::operator<(const Issue& other) const
-{
-   return (number < other.number);
-}
 
 // main function
 
@@ -19,7 +11,7 @@ int main(int argc, char** argv)
 
    try
    {
-      Session::Abstract* session = Session::Abstract::create();
+      Session::Abstract* session = Session::Abstract::createSession();
       if (1 == argList.count())
       {
          session->printOpenIssues();

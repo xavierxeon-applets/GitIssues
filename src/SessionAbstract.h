@@ -9,9 +9,17 @@
 #include <QNetworkAccessManager>
 #include <QStringList>
 
-#include "Credentials.h"
 #include "Exception.h"
-#include "GitIssue.h"
+
+struct Issue
+{
+   QString title;
+   QString body;
+   int number;
+
+   bool operator<(const Issue& other) const;
+   using List = QList<Issue>;
+};
 
 namespace Session
 {
@@ -19,7 +27,7 @@ namespace Session
    {
       Q_OBJECT
    public:
-      static Abstract* create();
+      static Abstract* createSession();
       void printOpenIssues();
       virtual void createNewIssue(const QString& title) = 0;
 
@@ -37,7 +45,8 @@ namespace Session
       QString host;
       QString owner;
       QString repoName;
-      Credentials credentials;
+      QString userName;
+      QString token;
 
    private:
       QNetworkAccessManager* client;
