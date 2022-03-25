@@ -112,6 +112,8 @@ Session::Abstract::Abstract(const QUrl& gitUrl)
       if ("password" == key)
          token = value;
    }
+
+   // qDebug() << userName << token;
 }
 
 QJsonArray Session::Abstract::getEndpoint(const QUrl& endPointUrl)
@@ -138,6 +140,13 @@ QJsonArray Session::Abstract::getEndpoint(const QUrl& endPointUrl)
    QJsonDocument doc = QJsonDocument::fromJson(data, &parserError);
    if (QJsonParseError::NoError != parserError.error)
       throw Exception(Exception::Cause::MalformedReply);
+
+   QFile debugFile("endpoint_log.json");
+   if (debugFile.open(QIODevice::WriteOnly))
+   {
+      debugFile.write(doc.toJson());
+      debugFile.close();
+   }
 
    const QJsonArray array = doc.array();
    return array;

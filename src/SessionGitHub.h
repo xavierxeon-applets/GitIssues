@@ -14,6 +14,7 @@ namespace Session
    private:
       Issue::List openIssues() override;
       void createNewIssue(const QString& title) override;
+      QUrl getIssuesPageUrl() const override;
       void authorize(QNetworkRequest& request) const override;
    };
 } // namespace Session

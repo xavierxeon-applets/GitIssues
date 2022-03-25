@@ -43,6 +43,11 @@ void Session::GitHub::createNewIssue(const QString& title)
    postEndpoint(endPointUrl, payload);
 }
 
+QUrl Session::GitHub::getIssuesPageUrl() const
+{
+   return QUrl(gitUrl.toString().replace(".git", "/issues"));
+}
+
 void Session::GitHub::authorize(QNetworkRequest& request) const
 {
    const QByteArray content = QByteArray("Basic ") + (userName + ":" + token).toUtf8().toBase64();

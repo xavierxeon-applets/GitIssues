@@ -18,7 +18,8 @@ namespace Session
          NoCredentialHelper,
          ServerError,
          MalformedUrl,
-         MalformedReply
+         MalformedReply,
+         ProjectNotFound
       };
 
    public:
@@ -45,6 +46,7 @@ namespace Session
       static Abstract* createSession();
       virtual void createNewIssue(const QString& title) = 0;
       virtual Issue::List openIssues() = 0;
+      virtual QUrl getIssuesPageUrl() const = 0;
 
    protected:
       Abstract(const QUrl& gitUrl);
