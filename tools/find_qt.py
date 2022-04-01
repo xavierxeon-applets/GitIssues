@@ -22,19 +22,24 @@ for entry in os.scandir(qtPath):
 # python 3.10 use "match"?
 pathDict = {
     'Linux': {
-        'x86_64': 'gcc_64'
+        'x86_64': 'gcc_64',
+        'armv7l': '.'
     }
 }
 
+print(platform.machine())
+
 if not platform.system() in pathDict:
+    print('system', platform.system())
     sys.exit(1)
 
 archDict = pathDict[platform.system()]
 
-if not platform.processor() in archDict:
+if not platform.machine() in archDict:
+    print('machine',platform.machine())
     sys.exit(1)
 
-path = archDict[platform.processor()]
+path = archDict[platform.machine()]
 qtPath += path + '/'
 
-print(qtPath)
+print('path', qtPath)
