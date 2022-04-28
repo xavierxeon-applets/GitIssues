@@ -2,7 +2,6 @@
 
 #include <QAuthenticator>
 #include <QCoreApplication>
-#include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -140,13 +139,6 @@ QJsonArray Session::Abstract::getEndpoint(const QUrl& endPointUrl)
    QJsonDocument doc = QJsonDocument::fromJson(data, &parserError);
    if (QJsonParseError::NoError != parserError.error)
       throw Exception(Exception::Cause::MalformedReply);
-
-   QFile debugFile("endpoint_log.json");
-   if (debugFile.open(QIODevice::WriteOnly))
-   {
-      debugFile.write(doc.toJson());
-      debugFile.close();
-   }
 
    const QJsonArray array = doc.array();
    return array;
