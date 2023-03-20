@@ -24,17 +24,20 @@ pathDict = {
     'Linux': {
         'x86_64': 'gcc_64',
         'armv7l': '.'
+    },
+    'Darwin': {
+        'x86_64': 'macos'
     }
 }
 
 if not platform.system() in pathDict:
-    #print('system', platform.system())
+    print('system', platform.system())
     sys.exit(1)
 
 archDict = pathDict[platform.system()]
 
 if not platform.machine() in archDict:
-    #print('machine',platform.machine())
+    print('machine', platform.machine())
     sys.exit(1)
 
 path = archDict[platform.machine()]
